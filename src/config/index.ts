@@ -5,4 +5,3 @@
 
 export * from './api';
 export * from './validation';
-export { default as httpsAgent } from './https-agent';
