@@ -11,7 +11,7 @@ export type ActionType = {
 export type Parameter = {
   key: string;
   value: string;
-  isSecret: boolean;
+  isSecret?: boolean;
 };
 
 export type ExpectedResult = {

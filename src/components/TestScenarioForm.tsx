@@ -244,7 +244,15 @@ const TestScenarioForm: React.FC = () => {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(() => setShowConfirmModal(true))} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (e.target === e.currentTarget) {
+            handleSubmit(() => setShowConfirmModal(true))(e);
+          }
+        }} 
+        className="space-y-6"
+      >
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Test Scenario Configuration</h1>
           

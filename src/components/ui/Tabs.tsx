@@ -14,6 +14,11 @@ interface TabsProps {
 const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab }) => {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0].id);
 
+  const handleTabClick = (e: React.MouseEvent, tabId: string) => {
+    e.preventDefault();
+    setActiveTab(tabId);
+  };
+
   return (
     <div className="w-full">
       <div className="border-b border-gray-200">
@@ -21,7 +26,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab }) => {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={(e) => handleTabClick(e, tab.id)}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
