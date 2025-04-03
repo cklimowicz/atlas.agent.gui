@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Accessibility styles */
+.high-contrast {
+  --tw-bg-opacity: 1;
+  --tw-text-opacity: 1;
+  --tw-border-opacity: 1;
+}
+
+.high-contrast body {
+  background-color: black;
+  color: white;
+}
+
+.high-contrast .bg-white {
+  background-color: black;
+  color: white;
+}
+
+.high-contrast .text-gray-500,
+.high-contrast .text-gray-700,
+.high-contrast .text-gray-900 {
+  color: white;
+}
+
+.high-contrast .border,
+.high-contrast .border-t,
+.high-contrast .border-b {
+  border-color: white;
+}
+
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+  background-color: #333;
+  color: white;
+  border-color: white;
+}
+
+.high-contrast button {
+  border: 2px solid white;
+}
+
+/* Focus styles for keyboard navigation */
+*:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Skip to content link for screen readers */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-to-content:focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: black;
+  font-weight: bold;
+  z-index: 9999;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+  }
+}
