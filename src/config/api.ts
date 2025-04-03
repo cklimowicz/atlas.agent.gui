@@ -5,12 +5,12 @@
  */
 
 // Base API URL - Using HTTPS for localhost
-export const API_BASE_URL = 'https://localhost:8000';
+export const API_BASE_URL = '/api';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Test scenario submission endpoint
-  SUBMIT_TEST_SCENARIO: `${API_BASE_URL}/docs/runs/programmatic`,
+  SUBMIT_TEST_SCENARIO: `${API_BASE_URL}/runs/programmatic`,
 };
 
 // API Request Configuration
