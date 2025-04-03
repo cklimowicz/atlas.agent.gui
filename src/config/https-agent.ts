@@ -2,7 +2,7 @@
  * HTTPS Agent Configuration
  * 
  * This module provides HTTPS agent configuration for secure API calls
- * using certificate files from the cert directory.
+ * using certificate files from the public directory.
  */
 
 // In a browser environment, we need to handle certificates differently
@@ -11,12 +11,19 @@
 // Function to load certificate files
 export const loadCertificates = async () => {
   try {
-    // Attempt to fetch certificate files
-    const certResponse = await fetch('/cert/cert.pem');
-    const keyResponse = await fetch('/cert/key.pem');
+    // Attempt to access certificate files from the public directory
+    const certResponse = await fetch('/cert.pem', {
+      headers: { 'Cache-Control': 'no-cache' },
+      method: 'GET'
+    });
+    const keyResponse = await fetch('/key.pem', {
+      headers: { 'Cache-Control': 'no-cache' },
+      method: 'GET'
+    });
     
     if (!certResponse.ok || !keyResponse.ok) {
-      console.error('Failed to load certificate files');
+      console.error('Failed to load certificate files', 
+        certResponse.status, keyResponse.status);
       return null;
     }
     

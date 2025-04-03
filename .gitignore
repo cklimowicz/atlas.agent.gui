@@ -1,0 +1,4 @@
+node_modules
+/.vite
+cert.pem
+key.pem

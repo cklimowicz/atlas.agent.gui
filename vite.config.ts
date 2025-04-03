@@ -4,8 +4,8 @@ import fs from 'fs'
 import path from 'path'
 
 // Check if certificate files exist
-const certPath = path.resolve('./cert/cert.pem')
-const keyPath = path.resolve('./cert/key.pem')
+const certPath = path.resolve('./cert.pem')
+const keyPath = path.resolve('./key.pem')
 
 const hasCertificates = fs.existsSync(certPath) && fs.existsSync(keyPath)
 
@@ -27,11 +27,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '')
-      },
-      // Add a proxy for certificate files
-      '/cert': {
-        target: 'file:./cert',
-        rewrite: (path) => path.replace(/^\/cert/, ''),
       }
     }
   }
