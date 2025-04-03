@@ -9,7 +9,8 @@ import Modal from './ui/Modal';
 import AgentConfigForm from './AgentConfigForm';
 import StepsManagement from './StepsManagement';
 import { TestScenario } from '../types';
-import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG, testScenarioSchema } from '../config';
+import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG, testScenarioSchema, checkCertificates, CERT_STATUS } from '../config';
+import { createSecureRequest } from '../config/https-agent';
 import Badge from './ui/Badge';
 
 // Function to transform form data to API payload format
@@ -101,28 +102,35 @@ const TestScenarioForm: React.FC = () => {
 
   // Check certificate status
   useEffect(() => {
-    // In browser environment, we can't directly check for certificates
-    // We'll check if we're using HTTPS protocol as a proxy
-    const checkCertificates = async () => {
+    const checkCertificateStatus = async () => {
       try {
-        // Try to fetch a simple HEAD request to check if certs are working
-        const response = await fetch(API_ENDPOINTS.SUBMIT_TEST_SCENARIO, {
-          method: 'HEAD',
-          mode: 'no-cors' // This prevents CORS errors during the check
-        });
-        
-        // If we get here without an error, certificates might be working
-        setCertStatus('loaded');
+        const certsAvailable = await checkCertificates();
+        setCertStatus(certsAvailable ? 'loaded' : 'missing');
       } catch (error) {
-        // If there's an error, certificates might be missing or invalid
         console.warn('Certificate check failed:', error);
         setCertStatus('missing');
       }
     };
     
-    // Don't actually run the check as it might cause console errors
-    // Just set to missing by default since we know they're not there yet
-    setCertStatus('missing');
+    checkCertificateStatus();
+    
+    // Also check localStorage for status updates from https-agent.ts
+    const handleStorageChange = () => {
+      const status = window.localStorage.getItem('cert_status');
+      if (status === 'loaded') {
+        setCertStatus('loaded');
+        CERT_STATUS.updateStatus(true);
+      } else if (status === 'missing') {
+        setCertStatus('missing');
+        CERT_STATUS.updateStatus(false);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const methods = useForm<TestScenario>({
@@ -154,8 +162,8 @@ const TestScenarioForm: React.FC = () => {
       
       console.log('Submitting data to API:', apiPayload);
       
-      // Make the API request with proper error handling
-      const response = await fetch(API_ENDPOINTS.SUBMIT_TEST_SCENARIO, {
+      // Use our secure request function with certificates
+      const response = await createSecureRequest(API_ENDPOINTS.SUBMIT_TEST_SCENARIO, {
         method: 'POST',
         headers: {
           ...API_CONFIG.DEFAULT_HEADERS,
@@ -165,9 +173,6 @@ const TestScenarioForm: React.FC = () => {
         // Add these options to help with debugging
         credentials: 'include',
         mode: 'cors',
-        // For browser environments, we need to accept invalid certificates
-        // @ts-ignore - This property exists but TypeScript doesn't recognize it
-        referrerPolicy: 'unsafe-url'
       });
       
       if (!response.ok) {

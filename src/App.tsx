@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import TestScenarioForm from './components/TestScenarioForm';
+import { loadCertificates } from './config/https-agent';
 
 function App() {
   // High contrast mode toggle
@@ -37,6 +38,19 @@ function App() {
         'https://localhost:8000/docs'
       );
     }
+  }, []);
+
+  // Load certificates on app start
+  useEffect(() => {
+    const initCertificates = async () => {
+      try {
+        await loadCertificates();
+      } catch (error) {
+        console.warn('Failed to load certificates:', error);
+      }
+    };
+    
+    initCertificates();
   }, []);
 
   return (
