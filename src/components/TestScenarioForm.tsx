@@ -10,6 +10,7 @@ import Modal from './ui/Modal';
 import AgentConfigForm from './AgentConfigForm';
 import StepsManagement from './StepsManagement';
 import { TestScenario } from '../types';
+import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG } from '../config/api';
 
 // Validation schema
 const parameterSchema = z.object({
@@ -53,6 +54,7 @@ const TestScenarioForm: React.FC = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [configName, setConfigName] = useState('');
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const methods = useForm<TestScenario>({
     resolver: zodResolver(testScenarioSchema),
@@ -75,18 +77,33 @@ const TestScenarioForm: React.FC = () => {
   const onSubmit = async (data: TestScenario) => {
     setShowConfirmModal(false);
     setIsSubmitting(true);
+    setApiError(null);
     
     try {
-      // Simulate API call
-      console.log('Submitting data:', data);
+      console.log('Submitting data to API:', data);
       
-      // API call would go here
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch(API_ENDPOINTS.SUBMIT_TEST_SCENARIO, {
+        method: 'POST',
+        headers: API_CONFIG.DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message || `API request failed with status ${response.status}`
+        );
+      }
+      
+      const result = await response.json();
+      console.log('API response:', result);
       
       toast.success('Test scenario submitted successfully!');
     } catch (error) {
       console.error('Error submitting test scenario:', error);
-      toast.error('Failed to submit test scenario. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setApiError(errorMessage);
+      toast.error(`Failed to submit test scenario: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -99,7 +116,7 @@ const TestScenarioForm: React.FC = () => {
     }
     
     const formData = methods.getValues();
-    localStorage.setItem(`test-scenario-${configName}`, JSON.stringify(formData));
+    localStorage.setItem(`${STORAGE_CONFIG.TEST_SCENARIO_PREFIX}${configName}`, JSON.stringify(formData));
     toast.success(`Configuration "${configName}" saved successfully!`);
     setShowSaveModal(false);
     setConfigName('');
@@ -126,10 +143,10 @@ const TestScenarioForm: React.FC = () => {
     const configs = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('test-scenario-')) {
+      if (key && key.startsWith(STORAGE_CONFIG.TEST_SCENARIO_PREFIX)) {
         configs.push({
           key,
-          name: key.replace('test-scenario-', ''),
+          name: key.replace(STORAGE_CONFIG.TEST_SCENARIO_PREFIX, ''),
         });
       }
     }
@@ -170,6 +187,16 @@ const TestScenarioForm: React.FC = () => {
                   <li>Case Steps: {errors.steps.message || 'Please add at least one step'}</li>
                 )}
               </ul>
+            </div>
+          </div>
+        )}
+
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+            <AlertTriangle size={20} className="mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">API Error:</p>
+              <p className="text-sm">{apiError}</p>
             </div>
           </div>
         )}
