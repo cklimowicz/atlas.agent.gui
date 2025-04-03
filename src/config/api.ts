@@ -4,13 +4,13 @@
  * Modify these values to change API endpoints without changing component code.
  */
 
-// Base API URL
-export const API_BASE_URL = 'http://localhost:8000';
+// Base API URL - Using HTTPS for localhost
+export const API_BASE_URL = 'https://localhost:8000';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Test scenario submission endpoint
-  SUBMIT_TEST_SCENARIO: `${API_BASE_URL}/runs/programmatic`,
+  SUBMIT_TEST_SCENARIO: `${API_BASE_URL}/docs/runs/programmatic`,
 };
 
 // API Request Configuration

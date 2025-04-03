@@ -27,9 +27,9 @@ export type Step = {
 };
 
 export type AgentConfig = {
-  codeWriterModel: string;
-  htmlAssistantModel: string;
-  progressCheckerModel: string;
+  codeWriterModel?: string;
+  htmlAssistantModel?: string;
+  progressCheckerModel?: string;
   startPageUrl: string;
   projectName: string;
   scenarioName: string;

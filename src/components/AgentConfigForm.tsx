@@ -14,29 +14,29 @@ const AgentConfigForm: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select
           id="codeWriterModel"
-          label="Code Writer Model"
+          label="Code Writer Model (Optional)"
           options={modelOptions}
           error={errors.agentConfig?.codeWriterModel?.message as string}
+          helperText="Optional: Select a model or leave empty"
           {...register('agentConfig.codeWriterModel')}
-          required
         />
         
         <Select
           id="htmlAssistantModel"
-          label="HTML Assistant Model"
+          label="HTML Assistant Model (Optional)"
           options={modelOptions}
           error={errors.agentConfig?.htmlAssistantModel?.message as string}
+          helperText="Optional: Select a model or leave empty"
           {...register('agentConfig.htmlAssistantModel')}
-          required
         />
         
         <Select
           id="progressCheckerModel"
-          label="Progress Checker Model"
+          label="Progress Checker Model (Optional)"
           options={modelOptions}
           error={errors.agentConfig?.progressCheckerModel?.message as string}
+          helperText="Optional: Select a model or leave empty"
           {...register('agentConfig.progressCheckerModel')}
-          required
         />
         
         <Input

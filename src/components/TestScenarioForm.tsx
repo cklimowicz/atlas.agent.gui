@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { useForm, FormProvider, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { Save, Upload, AlertTriangle } from 'lucide-react';
 import Tabs from './ui/Tabs';
@@ -10,44 +9,86 @@ import Modal from './ui/Modal';
 import AgentConfigForm from './AgentConfigForm';
 import StepsManagement from './StepsManagement';
 import { TestScenario } from '../types';
-import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG } from '../config/api';
+import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG, testScenarioSchema } from '../config';
 
-// Validation schema
-const parameterSchema = z.object({
-  key: z.string().min(1, 'Parameter key is required'),
-  value: z.string().min(1, 'Parameter value is required'),
-  isSecret: z.boolean().default(false),
-});
+// Function to transform form data to API payload format
+const transformFormDataToApiPayload = (data: TestScenario) => {
+  const { agentConfig, steps } = data;
+  
+  return {
+    // Map from agentConfig to root level fields
+    start_page: agentConfig.startPageUrl,
+    // Only include model fields if they have values
+    ...(agentConfig.codeWriterModel ? { code_writer_model: agentConfig.codeWriterModel } : {}),
+    ...(agentConfig.htmlAssistantModel ? { html_assistant_model: agentConfig.htmlAssistantModel } : {}),
+    ...(agentConfig.progressCheckerModel ? { progress_checker_model: agentConfig.progressCheckerModel } : {}),
+    
+    // Map other required fields
+    name: agentConfig.scenarioName,
+    project_name: agentConfig.projectName,
+    
+    // Transform steps array
+    case_steps: steps.map(step => ({
+      action: step.actionType,
+      number: step.stepNumber,
+      expected_results: step.expectedResults.map(result => result.description),
+      parameters: step.parameters.map(param => ({
+        key: param.key,
+        value: param.value,
+        is_secret: param.isSecret
+      }))
+    }))
+  };
+};
 
-const expectedResultSchema = z.object({
-  description: z.string().min(1, 'Expected result description is required'),
-});
+// Component to display the JSON preview
+const JsonPreview: React.FC = () => {
+  const { control } = useFormContext();
+  const formValues = useWatch({ control });
+  const [apiPayload, setApiPayload] = useState<any>(null);
+  
+  useEffect(() => {
+    if (!formValues) return;
+    
+    try {
+      // Create a deep copy of the form data
+      const data = JSON.parse(JSON.stringify(formValues));
+      
+      // Transform the data to match API expectations
+      if (data.agentConfig && data.steps) {
+        const transformedData = transformFormDataToApiPayload(data);
+        setApiPayload(transformedData);
+      }
+    } catch (error) {
+      console.error('Error transforming form data:', error);
+    }
+  }, [formValues]);
+  
+  return (
+    <div className="bg-white shadow rounded-lg p-6">
+      <h2 className="text-xl font-semibold mb-4">API Payload Preview</h2>
+      <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-[600px]">
+        <pre className="text-sm text-gray-800 whitespace-pre-wrap">
+          {apiPayload ? JSON.stringify(apiPayload, null, 2) : 'No data available'}
+        </pre>
+      </div>
+      <p className="mt-4 text-sm text-gray-500">
+        This is a preview of the data that will be sent to the API. Empty model fields are omitted.
+      </p>
+    </div>
+  );
+};
 
-const stepSchema = z.object({
-  id: z.string(),
-  stepNumber: z.number(),
-  actionType: z.string().min(1, 'Action type is required'),
-  expectedResults: z.array(expectedResultSchema),
-  parameters: z.array(parameterSchema),
-});
-
-const agentConfigSchema = z.object({
-  codeWriterModel: z.string().min(1, 'Code Writer Model is required'),
-  htmlAssistantModel: z.string().min(1, 'HTML Assistant Model is required'),
-  progressCheckerModel: z.string().min(1, 'Progress Checker Model is required'),
-  startPageUrl: z.string().url('Please enter a valid URL'),
-  projectName: z.string()
-    .min(1, 'Project name is required')
-    .regex(/^[a-zA-Z0-9_\- ]+$/, 'Project name must contain only alphanumeric characters, spaces, hyphens, and underscores'),
-  scenarioName: z.string()
-    .min(1, 'Scenario name is required')
-    .regex(/^[a-zA-Z0-9_\- ]+$/, 'Scenario name must contain only alphanumeric characters, spaces, hyphens, and underscores'),
-});
-
-const testScenarioSchema = z.object({
-  agentConfig: agentConfigSchema,
-  steps: z.array(stepSchema).min(1, 'At least one step is required'),
-});
+// Wrapper component to ensure JsonPreview has access to form context
+const JsonPreviewWrapper: React.FC = () => {
+  const formContext = useFormContext();
+  
+  if (!formContext) {
+    return <div>Form context not available</div>;
+  }
+  
+  return <JsonPreview />;
+};
 
 const TestScenarioForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,12 +121,25 @@ const TestScenarioForm: React.FC = () => {
     setApiError(null);
     
     try {
-      console.log('Submitting data to API:', data);
+      // Transform the data to match API expectations using the shared function
+      const apiPayload = transformFormDataToApiPayload(data);
       
+      console.log('Submitting data to API:', apiPayload);
+      
+      // Make sure we're sending the actual payload
       const response = await fetch(API_ENDPOINTS.SUBMIT_TEST_SCENARIO, {
         method: 'POST',
-        headers: API_CONFIG.DEFAULT_HEADERS,
-        body: JSON.stringify(data),
+        headers: {
+          ...API_CONFIG.DEFAULT_HEADERS,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(apiPayload),
+        // Add these options to help with debugging
+        credentials: 'include',
+        mode: 'cors',
+        // Disable SSL certificate validation for localhost
+        // @ts-ignore - This property exists but TypeScript doesn't recognize it
+        referrerPolicy: 'unsafe-url'
       });
       
       if (!response.ok) {
@@ -170,6 +224,11 @@ const TestScenarioForm: React.FC = () => {
               label: 'Case Steps Management',
               content: <StepsManagement />,
             },
+            {
+              id: 'json-preview',
+              label: 'API Payload Preview',
+              content: <JsonPreviewWrapper />,
+            },
           ]}
           defaultTab="agent-config"
         />
@@ -197,6 +256,11 @@ const TestScenarioForm: React.FC = () => {
             <div>
               <p className="font-medium">API Error:</p>
               <p className="text-sm">{apiError}</p>
+              <p className="text-sm mt-2">
+                <strong>Note:</strong> If you're seeing a network error, this might be due to HTTPS certificate issues with localhost. 
+                Try accessing the API directly at <a href="https://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="underline">https://localhost:8000/docs</a> 
+                and accept any certificate warnings in your browser first.
+              </p>
             </div>
           </div>
         )}

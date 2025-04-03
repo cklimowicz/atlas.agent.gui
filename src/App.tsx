@@ -27,6 +27,18 @@ function App() {
     };
   }, []);
 
+  // Add a warning about HTTPS certificate issues
+  useEffect(() => {
+    // Check if we're using HTTPS on localhost
+    if (window.location.protocol === 'https:' && window.location.hostname === 'localhost') {
+      console.warn(
+        'You are using HTTPS on localhost. If you encounter API connection issues, ' +
+        'try visiting the API URL directly first to accept any certificate warnings: ' +
+        'https://localhost:8000/docs'
+      );
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Toaster position="top-right" />

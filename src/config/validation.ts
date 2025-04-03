@@ -28,9 +28,12 @@ export const stepSchema = z.object({
 
 // Agent configuration validation schema
 export const agentConfigSchema = z.object({
-  codeWriterModel: z.string().min(1, 'Code Writer Model is required'),
-  htmlAssistantModel: z.string().min(1, 'HTML Assistant Model is required'),
-  progressCheckerModel: z.string().min(1, 'Progress Checker Model is required'),
+  // These model fields are optional and can be empty strings
+  codeWriterModel: z.string().optional(),
+  htmlAssistantModel: z.string().optional(),
+  progressCheckerModel: z.string().optional(),
+  
+  // These fields are still required
   startPageUrl: z.string().url('Please enter a valid URL'),
   projectName: z.string()
     .min(1, 'Project name is required')
