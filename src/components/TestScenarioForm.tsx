@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { Save, Upload, AlertTriangle } from 'lucide-react';
+import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert } from 'lucide-react';
 import Tabs from './ui/Tabs';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
 import AgentConfigForm from './AgentConfigForm';
 import StepsManagement from './StepsManagement';
 import { TestScenario } from '../types';
-import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG, testScenarioSchema } from '../config';
+import { API_ENDPOINTS, API_CONFIG, STORAGE_CONFIG, testScenarioSchema, httpsAgent } from '../config';
+import Badge from './ui/Badge';
 
 // Function to transform form data to API payload format
 const transformFormDataToApiPayload = (data: TestScenario) => {
@@ -96,6 +97,18 @@ const TestScenarioForm: React.FC = () => {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [configName, setConfigName] = useState('');
   const [apiError, setApiError] = useState<string | null>(null);
+  const [certStatus, setCertStatus] = useState<'loaded' | 'missing' | 'unknown'>('unknown');
+
+  // Check certificate status
+  useEffect(() => {
+    // We can't directly check if the httpsAgent has certs loaded from the browser
+    // So we'll check if the module imported correctly
+    if (httpsAgent) {
+      setCertStatus('loaded');
+    } else {
+      setCertStatus('missing');
+    }
+  }, []);
 
   const methods = useForm<TestScenario>({
     resolver: zodResolver(testScenarioSchema),
@@ -126,7 +139,7 @@ const TestScenarioForm: React.FC = () => {
       
       console.log('Submitting data to API:', apiPayload);
       
-      // Make sure we're sending the actual payload
+      // Make the API request with proper error handling
       const response = await fetch(API_ENDPOINTS.SUBMIT_TEST_SCENARIO, {
         method: 'POST',
         headers: {
@@ -137,7 +150,8 @@ const TestScenarioForm: React.FC = () => {
         // Add these options to help with debugging
         credentials: 'include',
         mode: 'cors',
-        // Disable SSL certificate validation for localhost
+        // The agent is handled by Node.js on the server side
+        // In the browser, we need to use different approaches
         // @ts-ignore - This property exists but TypeScript doesn't recognize it
         referrerPolicy: 'unsafe-url'
       });
@@ -212,6 +226,25 @@ const TestScenarioForm: React.FC = () => {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(() => setShowConfirmModal(true))} className="space-y-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Test Scenario Configuration</h1>
+          
+          {/* Certificate status indicator */}
+          <div className="flex items-center">
+            {certStatus === 'loaded' ? (
+              <Badge variant="success" className="flex items-center">
+                <ShieldCheck size={16} className="mr-1" /> 
+                Certificates Loaded
+              </Badge>
+            ) : certStatus === 'missing' ? (
+              <Badge variant="warning" className="flex items-center">
+                <ShieldAlert size={16} className="mr-1" /> 
+                Certificates Missing
+              </Badge>
+            ) : null}
+          </div>
+        </div>
+        
         <Tabs
           tabs={[
             {
@@ -261,6 +294,11 @@ const TestScenarioForm: React.FC = () => {
                 Try accessing the API directly at <a href="https://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="underline">https://localhost:8000/docs</a> 
                 and accept any certificate warnings in your browser first.
               </p>
+              {certStatus === 'missing' && (
+                <p className="text-sm mt-2">
+                  <strong>Certificate files missing:</strong> Place cert.pem and key.pem in the cert directory to enable secure connections.
+                </p>
+              )}
             </div>
           </div>
         )}

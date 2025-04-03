@@ -29,3 +29,9 @@ export const STORAGE_CONFIG = {
   // Prefix for test scenario configurations in local storage
   TEST_SCENARIO_PREFIX: 'test-scenario-',
 };
+
+// Certificate status
+export const CERT_STATUS = {
+  // This will be updated at runtime based on certificate availability
+  CERTS_LOADED: false
+};
