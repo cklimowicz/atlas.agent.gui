@@ -4,21 +4,22 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import TestScenarioForm from './components/TestScenarioForm';
 import { loadCertificates } from './config/https-agent';
+import { DOM_IDS, STORAGE_KEYS, CSS_CLASSES } from './config/ui';
 
 function App() {
   // Dark mode toggle
   useEffect(() => {
-    const darkModeToggle = document.getElementById('high-contrast-toggle');
+    const darkModeToggle = document.getElementById(DOM_IDS.DARK_MODE_TOGGLE);
     
     const toggleDarkMode = () => {
-      document.body.classList.toggle('dark-mode');
-      localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode').toString());
+      document.body.classList.toggle(CSS_CLASSES.DARK_MODE);
+      localStorage.setItem(STORAGE_KEYS.DARK_MODE, document.body.classList.contains(CSS_CLASSES.DARK_MODE).toString());
     };
     
     // Check if dark mode was previously enabled
-    const savedDarkMode = localStorage.getItem('dark-mode');
+    const savedDarkMode = localStorage.getItem(STORAGE_KEYS.DARK_MODE);
     if (savedDarkMode === 'true') {
-      document.body.classList.add('dark-mode');
+      document.body.classList.add(CSS_CLASSES.DARK_MODE);
     }
     
     darkModeToggle?.addEventListener('click', toggleDarkMode);

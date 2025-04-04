@@ -8,6 +8,8 @@
 // In a browser environment, we need to handle certificates differently
 // than in Node.js. We'll create a utility to fetch and use the certificates.
 
+import { STORAGE_KEYS } from './ui';
+
 // Function to load certificate files
 export const loadCertificates = async () => {
   try {
@@ -44,9 +46,9 @@ export const checkCertificates = async (): Promise<boolean> => {
   
   // Update localStorage status
   if (certsAvailable) {
-    window.localStorage.setItem('cert_status', 'loaded');
+    window.localStorage.setItem(STORAGE_KEYS.CERT_STATUS, 'loaded');
   } else {
-    window.localStorage.setItem('cert_status', 'missing');
+    window.localStorage.setItem(STORAGE_KEYS.CERT_STATUS, 'missing');
   }
   
   return certsAvailable;
