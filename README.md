@@ -1,59 +1,83 @@
-# Test Scenario Management System
+# Atlas Code-Gen
 
-A responsive GUI for managing test scenarios with secure API integration.
+Responsywny interfejs graficzny do generowania kodu na podstawie kroków testowych z bezpieczną integracją API.
 
-## Setup
+## Instalacja
 
-1. Clone the repository
-2. Install dependencies:
+1. Sklonuj repozytorium
+2. Zainstaluj zależności:
    ```
    npm install
    ```
-3. Place your SSL certificates in the `cert` directory:
-   - `cert.pem` - SSL certificate
-   - `key.pem` - SSL private key
+3. Umieść certyfikaty SSL w katalogu głównym projektu:
+   - `cert.pem` - certyfikat SSL
+   - `key.pem` - klucz prywatny SSL
 
-4. Start the development server:
+4. Uruchom serwer deweloperski:
    ```
    npm run dev
    ```
 
-## Certificate Configuration
+## Konfiguracja certyfikatów
 
-The application is configured to use SSL certificates for secure communication with the API. 
-To enable this feature:
+Aplikacja jest skonfigurowana do używania certyfikatów SSL do bezpiecznej komunikacji z API.
+Aby włączyć tę funkcję:
 
-1. Create a `cert` directory in the project root if it doesn't exist
-2. Place your certificate files in this directory:
-   - `cert.pem` - The SSL certificate
-   - `key.pem` - The SSL private key
+1. Umieść pliki certyfikatów bezpośrednio w katalogu głównym projektu:
+   - `cert.pem` - certyfikat SSL
+   - `key.pem` - klucz prywatny SSL
 
-If the certificate files are not found, the application will fall back to accepting self-signed certificates,
-but you may still encounter browser security warnings.
+Jeśli pliki certyfikatów nie zostaną znalezione, aplikacja przejdzie w tryb akceptowania certyfikatów samopodpisanych,
+ale nadal możesz napotkać ostrzeżenia dotyczące bezpieczeństwa w przeglądarce.
 
-## API Integration
+## Integracja z API
 
-The application connects to an API at `https://localhost:8000`. If you encounter connection issues:
+Aplikacja łączy się z API pod adresem `https://localhost:8000`. Jeśli napotkasz problemy z połączeniem:
 
-1. Try accessing the API directly at https://localhost:8000/docs in your browser
-2. Accept any certificate warnings that appear
-3. Return to the application and try submitting again
+1. Spróbuj otworzyć API bezpośrednio pod adresem https://localhost:8000/docs w przeglądarce
+2. Zaakceptuj ostrzeżenia dotyczące certyfikatu, które się pojawią
+3. Wróć do aplikacji i spróbuj ponownie wygenerować kod
 
-## Features
+## Funkcje
 
-- Agent configuration with model selection
-- Step-by-step test scenario creation
-- Drag-and-drop step reordering
-- Local storage for saving and loading configurations
-- API payload preview
-- Secure HTTPS communication
-- Accessibility features including high contrast mode
+- Konfiguracja agenta z wyborem modeli
+- Tworzenie kroków testowych krok po kroku
+- Zmiana kolejności kroków metodą przeciągnij i upuść
+- Lokalne przechowywanie zapisanych konfiguracji
+- Podgląd danych wysyłanych do API
+- Bezpieczna komunikacja HTTPS
+- Funkcje dostępności, w tym tryb wysokiego kontrastu
 
-## Development
+## Używanie aplikacji
 
-This project uses:
-- React with TypeScript
-- Tailwind CSS for styling
-- react-hook-form for form management
-- zod for validation
-- react-beautiful-dnd for drag-and-drop functionality
+1. **Konfiguracja Agenta**: Wybierz odpowiednie modele AI do generowania kodu
+2. **Kroki Testowe**: Wprowadź adres URL strony startowej, nazwę projektu i nazwę testu, a następnie zdefiniuj kroki testowe
+3. **Podgląd API**: Sprawdź dane, które zostaną wysłane do API
+4. **Generowanie kodu**: Kliknij "Generuj Kod", aby wysłać scenariusz do API
+5. **Odpowiedź API**: Obejrzyj wygenerowany kod lub diagnostykę błędów
+
+## Zarządzanie konfiguracjami
+
+- **Zapisz Wersję**: Zachowaj bieżącą konfigurację pod wybraną nazwą
+- **Wczytaj Wersję**: Wczytaj wcześniej zapisaną konfigurację
+- **Import JSON**: Importuj konfigurację z formatu JSON
+
+## Technologie
+
+Projekt wykorzystuje:
+- React z TypeScript
+- Tailwind CSS do stylizacji
+- react-hook-form do zarządzania formularzami
+- zod do walidacji
+- react-beautiful-dnd do funkcji przeciągnij i upuść
+- react-hot-toast do powiadomień
+
+## Rozwój
+
+Aby rozwijać projekt:
+
+1. Sklonuj repozytorium
+2. Zainstaluj zależności: `npm install`
+3. Uruchom serwer deweloperski: `npm run dev`
+4. Wprowadź zmiany i sprawdź je w przeglądarce
+5. Zbuduj produkcyjną wersję: `npm run build`

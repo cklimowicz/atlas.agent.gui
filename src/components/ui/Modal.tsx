@@ -8,6 +8,7 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  className?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -16,6 +17,7 @@ const Modal: React.FC<ModalProps> = ({
   title,
   children,
   footer,
+  className = 'max-w-md',
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +53,7 @@ const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col"
+        className={`bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col ${className}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"

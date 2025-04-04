@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import Tabs from './ui/Tabs';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -33,7 +33,9 @@ const transformFormDataToApiPayload = (data: TestScenario) => {
     case_steps: steps.map(step => ({
       action: step.actionType,
       number: step.stepNumber,
-      expected_results: step.expectedResults.map(result => result.description),
+      expected_results: step.expectedResults.length > 0 
+        ? step.expectedResults.map(result => result.description)
+        : null,
       parameters: step.parameters.map(param => ({
         key: param.key,
         value: param.value,
@@ -68,14 +70,14 @@ const JsonPreview: React.FC = () => {
   
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">API Payload Preview</h2>
+      <h2 className="text-xl font-semibold mb-4">Podgląd modelu do wysłania do API</h2>
       <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-[600px]">
-        <pre className="text-sm text-gray-800 whitespace-pre-wrap">
-          {apiPayload ? JSON.stringify(apiPayload, null, 2) : 'No data available'}
+        <pre className="text-sm text-gray-800 whitespace-pre-wrap json-preview-code">
+          {apiPayload ? JSON.stringify(apiPayload, null, 2) : 'Brak dostępnych danych'}
         </pre>
       </div>
       <p className="mt-4 text-sm text-gray-500">
-        This is a preview of the data that will be sent to the API. Empty model fields are omitted.
+        To jest podgląd danych, które zostaną wysłane do API. Puste pola modeli są pomijane.
       </p>
     </div>
   );
@@ -92,13 +94,93 @@ const JsonPreviewWrapper: React.FC = () => {
   return <JsonPreview />;
 };
 
+// Component to display the API response
+const ApiResponsePreview: React.FC<{ 
+  apiResponse: any; 
+  apiError: string | null; 
+  isLoading: boolean;
+  certStatus: 'loaded' | 'missing' | 'unknown';
+}> = ({ 
+  apiResponse, 
+  apiError,
+  isLoading,
+  certStatus
+}) => {
+  return (
+    <div className="bg-white shadow rounded-lg p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Odpowiedź z API</h2>
+        {apiResponse && !apiError && (
+          <Badge variant="success" className="flex items-center">
+            <CheckCircle size={16} className="mr-1" /> 
+            Sukces
+          </Badge>
+        )}
+        {apiError && (
+          <Badge variant="danger" className="flex items-center">
+            <XCircle size={16} className="mr-1" /> 
+            Błąd
+          </Badge>
+        )}
+        {isLoading && (
+          <Badge variant="warning" className="flex items-center">
+            Przetwarzanie...
+          </Badge>
+        )}
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3">Wysyłanie żądania...</span>
+        </div>
+      ) : apiError ? (
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            <h3 className="font-medium mb-1">Błąd API:</h3>
+            <p className="text-sm">{apiError}</p>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md mt-4">
+            <p className="text-sm">
+              <strong>Uwaga:</strong> Jeśli widzisz błąd sieci, może to być spowodowane problemami z certyfikatem HTTPS na localhost. 
+              Spróbuj otworzyć API bezpośrednio pod adresem <a href="https://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="underline">https://localhost:8000/docs</a> 
+              i zaakceptuj ostrzeżenia certyfikatu w przeglądarce.
+            </p>
+            {certStatus === 'missing' && (
+              <p className="text-sm mt-2">
+                <strong>Brak plików certyfikatów:</strong> Umieść pliki cert.pem i key.pem w katalogu głównym projektu, aby umożliwić bezpieczne połączenia.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : apiResponse ? (
+        <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-[600px]">
+          <pre className="text-sm text-gray-800 whitespace-pre-wrap json-preview-code">
+            {JSON.stringify(apiResponse, null, 2)}
+          </pre>
+        </div>
+      ) : (
+        <div className="text-center text-gray-500 py-10">
+          Brak odpowiedzi z API. Wygeneruj kod, aby zobaczyć odpowiedź.
+        </div>
+      )}
+    </div>
+  );
+};
+
 const TestScenarioForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [configName, setConfigName] = useState('');
+  const [jsonConfig, setJsonConfig] = useState('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [apiResponse, setApiResponse] = useState<any>(null);
   const [certStatus, setCertStatus] = useState<'loaded' | 'missing' | 'unknown'>('unknown');
+  const [activeTab, setActiveTab] = useState('agent-config');
 
   // Check certificate status
   useEffect(() => {
@@ -155,6 +237,10 @@ const TestScenarioForm: React.FC = () => {
     setShowConfirmModal(false);
     setIsSubmitting(true);
     setApiError(null);
+    setApiResponse(null);
+    
+    // Switch to API Response tab
+    setActiveTab('api-response');
     
     try {
       // Transform the data to match API expectations using the shared function
@@ -184,13 +270,14 @@ const TestScenarioForm: React.FC = () => {
       
       const result = await response.json();
       console.log('API response:', result);
+      setApiResponse(result);
       
-      toast.success('Test scenario submitted successfully!');
+      toast.success('Scenariusz testowy został pomyślnie wysłany!');
     } catch (error) {
       console.error('Error submitting test scenario:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setApiError(errorMessage);
-      toast.error(`Failed to submit test scenario: ${errorMessage}`);
+      toast.error(`Nie udało się wysłać scenariusza testowego: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -198,13 +285,13 @@ const TestScenarioForm: React.FC = () => {
 
   const handleSaveConfig = () => {
     if (!configName.trim()) {
-      toast.error('Please enter a name for your configuration');
+      toast.error('Proszę wprowadzić nazwę dla konfiguracji');
       return;
     }
     
     const formData = methods.getValues();
     localStorage.setItem(`${STORAGE_CONFIG.TEST_SCENARIO_PREFIX}${configName}`, JSON.stringify(formData));
-    toast.success(`Configuration "${configName}" saved successfully!`);
+    toast.success(`Konfiguracja "${configName}" została pomyślnie zapisana!`);
     setShowSaveModal(false);
     setConfigName('');
   };
@@ -217,11 +304,22 @@ const TestScenarioForm: React.FC = () => {
     if (savedConfig) {
       try {
         const parsedConfig = JSON.parse(savedConfig) as TestScenario;
-        methods.reset(parsedConfig);
-        toast.success('Configuration loaded successfully!');
+        methods.reset(parsedConfig, {
+          keepIsValid: false,
+          keepErrors: false,
+          keepDirty: false,
+          keepTouched: false
+        });
+        
+        // Ręcznie wyzwól walidację po zresetowaniu formularza
+        setTimeout(() => {
+          methods.trigger();
+        }, 100);
+        
+        toast.success('Konfiguracja została pomyślnie wczytana!');
       } catch (error) {
         console.error('Error parsing saved configuration:', error);
-        toast.error('Failed to load configuration. The saved data may be corrupted.');
+        toast.error('Nie udało się wczytać konfiguracji. Zapisane dane mogą być uszkodzone.');
       }
     }
   };
@@ -242,6 +340,94 @@ const TestScenarioForm: React.FC = () => {
 
   const savedConfigs = getSavedConfigs();
 
+  const handleImportJson = () => {
+    setJsonError(null);
+    
+    try {
+      if (!jsonConfig.trim()) {
+        setJsonError('Please enter JSON configuration');
+        return;
+      }
+      
+      // Parsowanie JSON
+      const parsedJson = JSON.parse(jsonConfig);
+      
+      // Obsługa formatu API (konwersja z API do formatu formularza)
+      let parsedConfig: TestScenario;
+      
+      // Sprawdzenie, czy to format API czy format formularza
+      if (parsedJson.start_page || parsedJson.case_steps) {
+        // To jest format API, konwertujemy do formatu formularza
+        parsedConfig = {
+          agentConfig: {
+            startPageUrl: parsedJson.start_page || '',
+            projectName: parsedJson.project_name || '',
+            scenarioName: parsedJson.name || '',
+            // Opcjonalne pola modeli
+            codeWriterModel: parsedJson.code_writer_model || '',
+            htmlAssistantModel: parsedJson.html_assistant_model || '',
+            progressCheckerModel: parsedJson.progress_checker_model || '',
+          },
+          steps: Array.isArray(parsedJson.case_steps) 
+            ? parsedJson.case_steps.map((step: any, index: number) => ({
+                id: String(index),
+                stepNumber: step.number || index + 1,
+                actionType: step.action || '',
+                expectedResults: Array.isArray(step.expected_results)
+                  ? step.expected_results.map((result: string) => ({ description: result }))
+                  : [],
+                parameters: Array.isArray(step.parameters)
+                  ? step.parameters.map((param: any) => ({
+                      key: param.key || '',
+                      value: param.value || '',
+                      isSecret: param.is_secret || false
+                    }))
+                  : []
+              }))
+            : []
+        };
+      } else {
+        // To jest już format formularza
+        parsedConfig = parsedJson as TestScenario;
+      }
+      
+      // Validate the imported data has the required structure
+      if (!parsedConfig.agentConfig || !Array.isArray(parsedConfig.steps)) {
+        setJsonError('Invalid JSON structure. Missing required fields.');
+        return;
+      }
+      
+      // Upewnij się, że opcjonalne pola modeli mają co najmniej puste stringi
+      if (parsedConfig.agentConfig) {
+        parsedConfig.agentConfig.codeWriterModel = parsedConfig.agentConfig.codeWriterModel || '';
+        parsedConfig.agentConfig.htmlAssistantModel = parsedConfig.agentConfig.htmlAssistantModel || '';
+        parsedConfig.agentConfig.progressCheckerModel = parsedConfig.agentConfig.progressCheckerModel || '';
+      }
+      
+      // Reset the form with the new values and trigger validation
+      methods.reset(parsedConfig, {
+        keepIsValid: false,
+        keepErrors: false,
+        keepDirty: false,
+        keepTouched: false,
+        keepSubmitCount: false
+      });
+      
+      // Ręcznie wyzwól walidację po zresetowaniu formularza
+      setTimeout(() => {
+        methods.trigger();
+      }, 100);
+      
+      // Close the modal and show success message
+      setShowImportModal(false);
+      setJsonConfig('');
+      toast.success('Konfiguracja została pomyślnie zaimportowana!');
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      setJsonError('Nieprawidłowy format JSON. Sprawdź swoje dane wejściowe.');
+    }
+  };
+
   return (
     <FormProvider {...methods}>
       <form 
@@ -253,79 +439,50 @@ const TestScenarioForm: React.FC = () => {
         }} 
         className="space-y-6"
       >
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Test Scenario Configuration</h1>
-          
-          {/* Certificate status indicator */}
-          <div className="flex items-center">
-            {certStatus === 'loaded' ? (
-              <Badge variant="success" className="flex items-center">
-                <ShieldCheck size={16} className="mr-1" /> 
-                Certificates Loaded
-              </Badge>
-            ) : certStatus === 'missing' ? (
-              <Badge variant="warning" className="flex items-center">
-                <ShieldAlert size={16} className="mr-1" /> 
-                Certificates Missing
-              </Badge>
-            ) : null}
-          </div>
-        </div>
-        
         <Tabs
           tabs={[
             {
               id: 'agent-config',
-              label: 'Agent Configuration',
+              label: 'Konfiguracja Agenta',
               content: <AgentConfigForm />,
             },
             {
               id: 'case-steps',
-              label: 'Case Steps Management',
+              label: 'Kroki Testowe',
               content: <StepsManagement />,
             },
             {
               id: 'json-preview',
-              label: 'API Payload Preview',
+              label: 'Podgląd API',
               content: <JsonPreviewWrapper />,
             },
+            {
+              id: 'api-response',
+              label: 'Odpowiedź API',
+              content: <ApiResponsePreview 
+                apiResponse={apiResponse} 
+                apiError={apiError} 
+                isLoading={isSubmitting}
+                certStatus={certStatus}
+              />,
+            },
           ]}
-          defaultTab="agent-config"
+          defaultTab={activeTab}
         />
 
         {Object.keys(errors).length > 0 && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
             <AlertTriangle size={20} className="mr-2 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Please fix the following errors:</p>
+              <p className="font-medium">Proszę poprawić następujące błędy:</p>
               <ul className="mt-1 list-disc list-inside text-sm">
                 {errors.agentConfig && (
-                  <li>Agent Configuration: Please complete all required fields</li>
+                  <li>Konfiguracja Agenta: Proszę uzupełnić wszystkie wymagane pola</li>
                 )}
                 {errors.steps && (
-                  <li>Case Steps: {errors.steps.message || 'Please add at least one step'}</li>
+                  <li>Kroki Testowe: {errors.steps.message || 'Proszę dodać co najmniej jeden krok'}</li>
                 )}
               </ul>
-            </div>
-          </div>
-        )}
-
-        {apiError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
-            <AlertTriangle size={20} className="mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">API Error:</p>
-              <p className="text-sm">{apiError}</p>
-              <p className="text-sm mt-2">
-                <strong>Note:</strong> If you're seeing a network error, this might be due to HTTPS certificate issues with localhost. 
-                Try accessing the API directly at <a href="https://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="underline">https://localhost:8000/docs</a> 
-                and accept any certificate warnings in your browser first.
-              </p>
-              {certStatus === 'missing' && (
-                <p className="text-sm mt-2">
-                  <strong>Certificate files missing:</strong> Place cert.pem and key.pem in the cert directory to enable secure connections.
-                </p>
-              )}
             </div>
           </div>
         )}
@@ -337,7 +494,7 @@ const TestScenarioForm: React.FC = () => {
               variant="outline"
               onClick={() => setShowSaveModal(true)}
             >
-              <Save size={18} className="mr-1" /> Save Draft
+              <Save size={18} className="mr-1" /> Zapisz Wersję
             </Button>
             
             <div className="relative">
@@ -346,7 +503,7 @@ const TestScenarioForm: React.FC = () => {
                 onChange={handleLoadConfig}
                 defaultValue=""
               >
-                <option value="" disabled>Load Configuration</option>
+                <option value="" disabled>Wczytaj Wersję</option>
                 {savedConfigs.map((config) => (
                   <option key={config.key} value={config.key}>
                     {config.name}
@@ -355,6 +512,14 @@ const TestScenarioForm: React.FC = () => {
               </select>
               <Upload size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500" />
             </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowImportModal(true)}
+            >
+              <Upload size={18} className="mr-1" /> Import JSON
+            </Button>
           </div>
           
           <Button
@@ -362,7 +527,7 @@ const TestScenarioForm: React.FC = () => {
             disabled={!isValid || isSubmitting}
             isLoading={isSubmitting}
           >
-            Submit Test Scenario
+            Generuj Kod
           </Button>
         </div>
 
@@ -370,23 +535,23 @@ const TestScenarioForm: React.FC = () => {
         <Modal
           isOpen={showConfirmModal}
           onClose={() => setShowConfirmModal(false)}
-          title="Confirm Submission"
+          title="Potwierdź Generowanie"
         >
-          <p>Are you sure you want to submit this test scenario?</p>
+          <p>Czy na pewno chcesz wygenerować kod?</p>
           <div className="mt-4 flex justify-end space-x-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowConfirmModal(false)}
             >
-              Cancel
+              Anuluj
             </Button>
             <Button
               type="button"
               onClick={() => onSubmit(methods.getValues())}
               isLoading={isSubmitting}
             >
-              Confirm
+              Potwierdź
             </Button>
           </div>
         </Modal>
@@ -395,16 +560,16 @@ const TestScenarioForm: React.FC = () => {
         <Modal
           isOpen={showSaveModal}
           onClose={() => setShowSaveModal(false)}
-          title="Save Configuration"
+          title="Zapisz Konfigurację"
         >
           <div className="space-y-4">
-            <p>Enter a name for this configuration:</p>
+            <p>Wprowadź nazwę dla tej konfiguracji:</p>
             <input
               type="text"
               value={configName}
               onChange={(e) => setConfigName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Configuration name"
+              placeholder="Nazwa konfiguracji"
             />
           </div>
           <div className="mt-4 flex justify-end space-x-3">
@@ -413,14 +578,58 @@ const TestScenarioForm: React.FC = () => {
               variant="outline"
               onClick={() => setShowSaveModal(false)}
             >
-              Cancel
+              Anuluj
             </Button>
             <Button
               type="button"
               onClick={handleSaveConfig}
               disabled={!configName.trim()}
             >
-              Save
+              Zapisz
+            </Button>
+          </div>
+        </Modal>
+
+        {/* Import JSON Modal */}
+        <Modal
+          isOpen={showImportModal}
+          onClose={() => {
+            setShowImportModal(false);
+            setJsonConfig('');
+            setJsonError(null);
+          }}
+          title="Import JSON"
+          className="w-full max-w-3xl"
+        >
+          <div className="space-y-4">
+            <p>Wklej konfigurację JSON poniżej:</p>
+            <textarea
+              value={jsonConfig}
+              onChange={(e) => setJsonConfig(e.target.value)}
+              className="w-full h-96 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+              placeholder='{"agentConfig": {...}, "steps": [...]}'
+            />
+            {jsonError && (
+              <div className="text-red-500 text-sm">{jsonError}</div>
+            )}
+          </div>
+          <div className="mt-4 flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowImportModal(false);
+                setJsonConfig('');
+                setJsonError(null);
+              }}
+            >
+              Anuluj
+            </Button>
+            <Button
+              type="button"
+              onClick={handleImportJson}
+            >
+              Importuj
             </Button>
           </div>
         </Modal>

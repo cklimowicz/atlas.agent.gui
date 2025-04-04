@@ -21,7 +21,7 @@ export const expectedResultSchema = z.object({
 export const stepSchema = z.object({
   id: z.string(),
   stepNumber: z.number(),
-  actionType: z.string().min(1, 'Action type is required'),
+  actionType: z.string().min(1, 'Please describe what this step should do'),
   expectedResults: z.array(expectedResultSchema),
   parameters: z.array(parameterSchema),
 });

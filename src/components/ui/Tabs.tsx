@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface Tab {
   id: string;
@@ -13,6 +13,13 @@ interface TabsProps {
 
 const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab }) => {
   const [activeTab, setActiveTab] = useState(defaultTab || tabs[0].id);
+  
+  // Aktualizacja aktywnej zakładki gdy zmienia się defaultTab
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
 
   const handleTabClick = (e: React.MouseEvent, tabId: string) => {
     e.preventDefault();
@@ -21,8 +28,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab }) => {
 
   return (
     <div className="w-full">
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      <div className="border-b border-gray-200 flex">
+        <nav className="-mb-px flex flex-1 space-x-8" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}

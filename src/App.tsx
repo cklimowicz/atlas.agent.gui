@@ -6,25 +6,25 @@ import TestScenarioForm from './components/TestScenarioForm';
 import { loadCertificates } from './config/https-agent';
 
 function App() {
-  // High contrast mode toggle
+  // Dark mode toggle
   useEffect(() => {
-    const highContrastToggle = document.getElementById('high-contrast-toggle');
+    const darkModeToggle = document.getElementById('high-contrast-toggle');
     
-    const toggleHighContrast = () => {
-      document.body.classList.toggle('high-contrast');
-      localStorage.setItem('high-contrast', document.body.classList.contains('high-contrast').toString());
+    const toggleDarkMode = () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('dark-mode', document.body.classList.contains('dark-mode').toString());
     };
     
-    // Check if high contrast mode was previously enabled
-    const savedHighContrast = localStorage.getItem('high-contrast');
-    if (savedHighContrast === 'true') {
-      document.body.classList.add('high-contrast');
+    // Check if dark mode was previously enabled
+    const savedDarkMode = localStorage.getItem('dark-mode');
+    if (savedDarkMode === 'true') {
+      document.body.classList.add('dark-mode');
     }
     
-    highContrastToggle?.addEventListener('click', toggleHighContrast);
+    darkModeToggle?.addEventListener('click', toggleDarkMode);
     
     return () => {
-      highContrastToggle?.removeEventListener('click', toggleHighContrast);
+      darkModeToggle?.removeEventListener('click', toggleDarkMode);
     };
   }, []);
 

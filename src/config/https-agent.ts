@@ -37,6 +37,21 @@ export const loadCertificates = async () => {
   }
 };
 
+// Function to check if certificates are available
+export const checkCertificates = async (): Promise<boolean> => {
+  const certificates = await loadCertificates();
+  const certsAvailable = certificates !== null;
+  
+  // Update localStorage status
+  if (certsAvailable) {
+    window.localStorage.setItem('cert_status', 'loaded');
+  } else {
+    window.localStorage.setItem('cert_status', 'missing');
+  }
+  
+  return certsAvailable;
+};
+
 // This will be used in the API calls
 export const createSecureRequest = async (url: string, options: RequestInit = {}) => {
   try {
@@ -69,4 +84,4 @@ export const createSecureRequest = async (url: string, options: RequestInit = {}
   }
 };
 
-export default { loadCertificates, createSecureRequest };
+export default { loadCertificates, createSecureRequest, checkCertificates };

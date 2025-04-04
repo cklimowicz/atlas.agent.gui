@@ -1,7 +1,6 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { modelOptions } from '../data/models';
-import Input from './ui/Input';
 import Select from './ui/Select';
 import Card from './ui/Card';
 
@@ -37,34 +36,6 @@ const AgentConfigForm: React.FC = () => {
           error={errors.agentConfig?.progressCheckerModel?.message as string}
           helperText="Optional: Select a model or leave empty"
           {...register('agentConfig.progressCheckerModel')}
-        />
-        
-        <Input
-          id="startPageUrl"
-          label="Start Page URL"
-          type="url"
-          placeholder="https://example.com"
-          error={errors.agentConfig?.startPageUrl?.message as string}
-          {...register('agentConfig.startPageUrl')}
-          required
-        />
-        
-        <Input
-          id="projectName"
-          label="Project Name"
-          placeholder="My Project"
-          error={errors.agentConfig?.projectName?.message as string}
-          {...register('agentConfig.projectName')}
-          required
-        />
-        
-        <Input
-          id="scenarioName"
-          label="Scenario Name"
-          placeholder="Login Test"
-          error={errors.agentConfig?.scenarioName?.message as string}
-          {...register('agentConfig.scenarioName')}
-          required
         />
       </div>
     </Card>
