@@ -9,7 +9,7 @@ Responsywny interfejs graficzny do generowania kodu na podstawie kroków testowy
    ```
    npm install
    ```
-3. Umieść certyfikaty SSL w katalogu głównym projektu:
+3. Umieść certyfikaty SSL w katalogu `/public`:
    - `cert.pem` - certyfikat SSL
    - `key.pem` - klucz prywatny SSL
 
@@ -23,7 +23,7 @@ Responsywny interfejs graficzny do generowania kodu na podstawie kroków testowy
 Aplikacja jest skonfigurowana do używania certyfikatów SSL do bezpiecznej komunikacji z API.
 Aby włączyć tę funkcję:
 
-1. Umieść pliki certyfikatów bezpośrednio w katalogu głównym projektu:
+1. Umieść pliki certyfikatów w katalogu `/public`:
    - `cert.pem` - certyfikat SSL
    - `key.pem` - klucz prywatny SSL
 

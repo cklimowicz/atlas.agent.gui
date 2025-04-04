@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
-// Check if certificate files exist
-const certPath = path.resolve('./cert.pem')
-const keyPath = path.resolve('./key.pem')
+// Check if certificate files exist in the public directory
+const certPath = path.resolve('./public/cert.pem')
+const keyPath = path.resolve('./public/key.pem')
 
 const hasCertificates = fs.existsSync(certPath) && fs.existsSync(keyPath)
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert, CheckCircle, XCircle, Copy, Download } from 'lucide-react';
+import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert, CheckCircle, XCircle, Copy, Download, FileJson } from 'lucide-react';
 import Tabs from './ui/Tabs';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -80,22 +80,95 @@ const JsonPreview: React.FC = () => {
         });
     }
   };
+
+  // Funkcja do pobrania wzorcowego modelu JSON
+  const handleDownloadTemplateJson = () => {
+    // Definiujemy wzorcowy model JSON
+    const templateJson = {
+      "start_page": "string",
+      "code_writer_model": "string", // opcjonalne
+      "html_assistant_model": "string", // opcjonalne
+      "progress_checker_model": "string", // opcjonalne
+      "case_steps": [
+        {
+          "action": "string",
+          "number": 0,
+          "expected_results": [
+            "string"
+          ],
+          "parameters": [
+            {
+              "key": "string",
+              "value": "string",
+              "is_secret": true
+            }
+          ]
+        }
+      ],
+      "name": "string",
+      "project_name": "string"
+    };
+
+    // Tworzymy link do pobrania pliku
+    const element = document.createElement('a');
+    const file = new Blob([JSON.stringify(templateJson, null, 2)], {type: 'application/json'});
+    element.href = URL.createObjectURL(file);
+    element.download = 'template_model.json';
+    
+    // Dodanie elementu do DOM, wywołanie kliknięcia i usunięcie go
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast.success('Wzorcowy model JSON został pobrany');
+  };
   
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Podgląd modelu do wysłania do API</h2>
-        {apiPayload && (
+        <div className="flex space-x-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleCopyJson}
+            onClick={handleDownloadTemplateJson}
             className="flex items-center"
           >
-            <Copy size={16} className="mr-1" /> Kopiuj JSON
+            <FileJson size={16} className="mr-1" /> Pobierz wzorcowy model
           </Button>
-        )}
+          {apiPayload && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyJson}
+              className="flex items-center"
+            >
+              <Copy size={16} className="mr-1" /> Kopiuj JSON
+            </Button>
+          )}
+          {apiPayload && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const element = document.createElement('a');
+                const file = new Blob([JSON.stringify(apiPayload, null, 2)], {type: 'application/json'});
+                element.href = URL.createObjectURL(file);
+                element.download = 'agent_config.json';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+                toast.success('Konfiguracja JSON została pobrana');
+              }}
+              className="flex items-center"
+            >
+              <Download size={16} className="mr-1" /> Pobierz JSON
+            </Button>
+          )}
+        </div>
       </div>
       <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-[600px]">
         <pre className="text-sm text-gray-800 whitespace-pre-wrap json-preview-code">
