@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
+import { Save, Upload, AlertTriangle, ShieldCheck, ShieldAlert, CheckCircle, XCircle, Copy, Download } from 'lucide-react';
 import Tabs from './ui/Tabs';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
@@ -68,9 +68,35 @@ const JsonPreview: React.FC = () => {
     }
   }, [formValues]);
   
+  const handleCopyJson = () => {
+    if (apiPayload) {
+      navigator.clipboard.writeText(JSON.stringify(apiPayload, null, 2))
+        .then(() => {
+          toast.success('JSON skopiowany do schowka');
+        })
+        .catch(err => {
+          console.error('Nie udało się skopiować JSON:', err);
+          toast.error('Nie udało się skopiować JSON');
+        });
+    }
+  };
+  
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Podgląd modelu do wysłania do API</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Podgląd modelu do wysłania do API</h2>
+        {apiPayload && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopyJson}
+            className="flex items-center"
+          >
+            <Copy size={16} className="mr-1" /> Kopiuj JSON
+          </Button>
+        )}
+      </div>
       <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-[600px]">
         <pre className="text-sm text-gray-800 whitespace-pre-wrap json-preview-code">
           {apiPayload ? JSON.stringify(apiPayload, null, 2) : 'Brak dostępnych danych'}
@@ -106,33 +132,118 @@ const ApiResponsePreview: React.FC<{
   isLoading,
   certStatus
 }) => {
+  const formMethods = useFormContext();
+  
+  const handleCopyResponse = () => {
+    if (apiResponse) {
+      navigator.clipboard.writeText(
+        typeof apiResponse === 'string' ? apiResponse : JSON.stringify(apiResponse, null, 2)
+      )
+        .then(() => {
+          toast.success('Odpowiedź skopiowana do schowka');
+        })
+        .catch(err => {
+          console.error('Nie udało się skopiować odpowiedzi:', err);
+          toast.error('Nie udało się skopiować odpowiedzi');
+        });
+    }
+  };
+
+  // Funkcja do zapisywania kodu Python do pliku
+  const handleSaveToFile = () => {
+    if (!apiResponse) return;
+    
+    // Pobieramy aktualną nazwę projektu i testu z formularza
+    const formData = formMethods.getValues();
+    const projectName = formData.agentConfig?.projectName || 'project';
+    const testName = formData.agentConfig?.scenarioName || 'test';
+    
+    // Usuwamy znaki specjalne i spacje z nazw, aby uzyskać bezpieczną nazwę pliku
+    const safeProjectName = projectName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeTestName = testName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    
+    // Pobieramy zawartość odpowiedzi
+    const content = typeof apiResponse === 'string' ? apiResponse : JSON.stringify(apiResponse, null, 2);
+    
+    // Tworzenie elementu <a> do pobrania pliku
+    const element = document.createElement('a');
+    const file = new Blob([content], {type: 'text/x-python'});
+    element.href = URL.createObjectURL(file);
+    
+    // Nazwa pliku składa się z nazwy projektu i nazwy testu z rozszerzeniem .py
+    element.download = `${safeProjectName}_${safeTestName}.py`;
+    
+    // Dodanie elementu do DOM, wywołanie kliknięcia i usunięcie go
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast.success(`Plik ${element.download} został zapisany`);
+  };
+
+  // Sprawdzenie czy odpowiedź jest kodem Python
+  const isPythonCode = apiResponse && 
+    typeof apiResponse === 'string' &&
+    (apiResponse.startsWith('def ') || 
+     apiResponse.startsWith('import ') || 
+     apiResponse.startsWith('class ') ||
+     apiResponse.startsWith('# ') ||
+     apiResponse.includes('def ') ||
+     apiResponse.includes('class '));
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Odpowiedź z API</h2>
-        {apiResponse && !apiError && (
-          <Badge variant="success" className="flex items-center">
-            <CheckCircle size={16} className="mr-1" /> 
-            Sukces
-          </Badge>
-        )}
-        {apiError && (
-          <Badge variant="danger" className="flex items-center">
-            <XCircle size={16} className="mr-1" /> 
-            Błąd
-          </Badge>
-        )}
-        {isLoading && (
-          <Badge variant="warning" className="flex items-center">
-            Przetwarzanie...
-          </Badge>
-        )}
+        <div className="flex items-center space-x-2">
+          {apiResponse && !apiError && (
+            <>
+              <Badge variant="success" className="flex items-center">
+                <CheckCircle size={16} className="mr-1" /> 
+                Sukces
+              </Badge>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyResponse}
+                className="flex items-center"
+              >
+                <Copy size={16} className="mr-1" /> Kopiuj
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSaveToFile}
+                className="flex items-center"
+              >
+                <Download size={16} className="mr-1" /> Zapisz do pliku
+              </Button>
+            </>
+          )}
+          {apiError && (
+            <Badge variant="danger" className="flex items-center">
+              <XCircle size={16} className="mr-1" /> 
+              Błąd
+            </Badge>
+          )}
+          {isLoading && (
+            <Badge variant="warning" className="flex items-center">
+              Przetwarzanie...
+            </Badge>
+          )}
+        </div>
       </div>
       
       {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-3">Wysyłanie żądania...</span>
+        <div className="flex flex-col justify-center items-center h-60">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+          <span className="text-lg font-medium">Oczekiwanie na odpowiedź z API...</span>
+          <p className="text-gray-500 mt-2 max-w-lg text-center">
+            Generowanie kodu może potrwać do kilkunastu minut. 
+            Proszę czekać aż proces się zakończy - otrzymasz albo kod Python, albo informację o błędzie.
+          </p>
         </div>
       ) : apiError ? (
         <div className="space-y-4">
@@ -156,9 +267,23 @@ const ApiResponsePreview: React.FC<{
         </div>
       ) : apiResponse ? (
         <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-[600px]">
-          <pre className="text-sm text-gray-800 whitespace-pre-wrap json-preview-code">
-            {JSON.stringify(apiResponse, null, 2)}
-          </pre>
+          {isPythonCode ? (
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <Badge variant="success" className="flex items-center">
+                  <CheckCircle size={14} className="mr-1" /> 
+                  Kod Python
+                </Badge>
+              </div>
+              <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono bg-gray-800 text-gray-50 p-4 rounded">
+                {apiResponse}
+              </pre>
+            </>
+          ) : (
+            <pre className="text-sm text-gray-800 whitespace-pre-wrap json-preview-code">
+              {typeof apiResponse === 'string' ? apiResponse : JSON.stringify(apiResponse, null, 2)}
+            </pre>
+          )}
         </div>
       ) : (
         <div className="text-center text-gray-500 py-10">
@@ -253,7 +378,7 @@ const TestScenarioForm: React.FC = () => {
         method: 'POST',
         headers: {
           ...API_CONFIG.DEFAULT_HEADERS,
-          'Accept': 'application/json'
+          'Accept': 'application/json, text/x-python'
         },
         body: JSON.stringify(apiPayload),
         // Add these options to help with debugging
@@ -268,10 +393,21 @@ const TestScenarioForm: React.FC = () => {
         );
       }
       
-      const result = await response.json();
-      console.log('API response:', result);
-      setApiResponse(result);
+      // Sprawdzenie typu zawartości odpowiedzi
+      const contentType = response.headers.get('content-type') || '';
+      let result;
       
+      if (contentType.includes('text/x-python')) {
+        // Jeśli to kod Python, odczytaj jako tekst
+        result = await response.text();
+        console.log('Received Python code from API');
+      } else {
+        // W przeciwnym razie odczytaj jako JSON
+        result = await response.json();
+        console.log('API response:', result);
+      }
+      
+      setApiResponse(result);
       toast.success('Scenariusz testowy został pomyślnie wysłany!');
     } catch (error) {
       console.error('Error submitting test scenario:', error);
@@ -453,7 +589,7 @@ const TestScenarioForm: React.FC = () => {
             },
             {
               id: 'json-preview',
-              label: 'Podgląd API',
+              label: 'Podgląd JSON',
               content: <JsonPreviewWrapper />,
             },
             {

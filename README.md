@@ -44,17 +44,19 @@ Aplikacja łączy się z API pod adresem `https://localhost:8000`. Jeśli napotk
 - Tworzenie kroków testowych krok po kroku
 - Zmiana kolejności kroków metodą przeciągnij i upuść
 - Lokalne przechowywanie zapisanych konfiguracji
-- Podgląd danych wysyłanych do API
+- Podgląd danych wysyłanych do API w formacie JSON
 - Bezpieczna komunikacja HTTPS
 - Funkcje dostępności, w tym tryb wysokiego kontrastu
+- Zapisywanie wygenerowanego kodu Python do pliku
 
 ## Używanie aplikacji
 
 1. **Konfiguracja Agenta**: Wybierz odpowiednie modele AI do generowania kodu
 2. **Kroki Testowe**: Wprowadź adres URL strony startowej, nazwę projektu i nazwę testu, a następnie zdefiniuj kroki testowe
-3. **Podgląd API**: Sprawdź dane, które zostaną wysłane do API
+3. **Podgląd JSON**: Sprawdź dane, które zostaną wysłane do API
 4. **Generowanie kodu**: Kliknij "Generuj Kod", aby wysłać scenariusz do API
 5. **Odpowiedź API**: Obejrzyj wygenerowany kod lub diagnostykę błędów
+6. **Zapisywanie kodu**: Po wygenerowaniu kodu Python, możesz go zapisać do pliku, który zostanie nazwany według wzoru `nazwa_projektu_nazwa_testu.py`
 
 ## Zarządzanie konfiguracjami
 
